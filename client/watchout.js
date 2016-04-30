@@ -1,12 +1,23 @@
 /********** Helper Functions and Methods **********/
 
+var updateCollision = function() {
+  d3.select('#collision-count').text(gameStats.collision.toString());
+  gameStats.collision++;
+  svgContainer.style("border-color","red");
+  setTimeout(function(){
+    svgContainer.style("border-color","black");
+  },200);
+};
+
 var updateScore = function() {
   return d3.select('#current-score').text(gameStats.score.toString());
 };
 
 var updateBestScore = function() {
   gameStats.bestScore = Math.max(gameStats.bestScore, gameStats.score);
-  return d3.select('#highest-score').text(gameStats.bestScore.toString());
+  d3.select('#highest-score').text(gameStats.bestScore.toString());
+  d3.select('#collision-count').text(gameStats.collision.toString());
+
 };
 
 var increaseScore = function() {
@@ -37,12 +48,12 @@ var svgContainer = d3.select('div').append('svg')
   .attr('width', 700)
   .attr('height', 600)
   .style('background-color', '#D3D3D3')
-  .style('border', '2px solid black')
+  .style('border', '4px solid black')
   .style('margin-top',"20px");
 
 /*************** Game Data Here! ****************/
 
-var gameStats = {score: 0, bestScore: 0};
+var gameStats = {score: 0, bestScore: 0, collision: 0};
 
 /********** Enemies and Player Circles **********/
 
@@ -70,7 +81,9 @@ var jsonCircles = [
   { "color" : "red", "id" : 'u'},
   { "color" : "teal",  "id": 'v'},
   { "color" : "gray", "id": 'w'},
-  { "color" : "orange", "id": 'x'}
+  { "color" : "orange", "id": 'x'},
+  { "color" : "pink", "id": 'y'},
+  { "color" : "yellow", "id": 'z'}
 
 ];
 
@@ -107,6 +120,8 @@ var player = svgContainer.append('circle')
 
 updateBestScore();
 
+var throttleCollision = _.throttle(updateCollision, 500, {leading: false, trailing: false});
+
 setInterval(function() { 
   updatePositions();
 }, 1500);
@@ -129,8 +144,10 @@ setInterval(function() {
     var hasCollisionY = playerY < (enemyY + 15) && playerY > (enemyY - 15);
     //console.log(enemyX, enemyY, 'Enemies');
     if (hasCollisionX && hasCollisionY) {
+      throttleCollision();
       updateBestScore();
       gameStats.score = 0;
+      
       
     }
   });
