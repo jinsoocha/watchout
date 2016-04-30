@@ -1,16 +1,37 @@
-// start slingin' some d3 here.
-// start slingin' some d3 here.
+/********** Helper Functions and Methods **********/
+
+var updateScore = function() {
+  return d3.select('#current-score').text(gameStats.score.toString());
+};
+
+var updateBestScore = function() {
+  gameStats.bestScore = Math.max(gameStats.bestScore, gameStats.score);
+  return d3.select('#highest-score').text(gameStats.bestScore.toString());
+};
+
+var increaseScore = function() {
+  gameStats.score++;
+  return updateScore();
+};
+
+var updatePositions = function() {
+  circleAttributes.attr("class","update")
+    .transition()
+    .duration(1500)
+    .attr('cx', function(d) { return 700 * Math.random(); })
+    .attr('cy', d => 600 * Math.random());
+};
 
 
-var jsonCircles = [
-  { "x_axis": 70, "y_axis": 200, "radius": 20, "color" : "green",  "enemyName" : 'Coffee Script'},
-  { "x_axis": 200, "y_axis": 300, "radius": 20, "color" : "purple", "enemyName" : 'Type Script'},
-  { "x_axis": 400, "y_axis": 400, "radius": 20, "color" : "red", "enemyName" : 'Java Script'},
-  { "x_axis": 70, "y_axis": 200, "radius": 20, "color" : "green",  "enemyName" : 'Coffee Script'},
-  { "x_axis": 200, "y_axis": 300, "radius": 20, "color" : "purple", "enemyName" : 'Type Script'},
-  { "x_axis": 400, "y_axis": 400, "radius": 20, "color" : "red", "enemyName" : 'Java Script'}
-];
 
+var drag = d3.behavior.drag()  
+  .on('dragstart', function() { player.style('fill', 'white'); })
+  .on('drag', function() { 
+    player.attr('cx', d3.event.x).attr('cy', d3.event.y); 
+  })
+  .on('dragend', function() { player.style('fill', 'black'); });
+
+/*************** Game Board Here! ***************/
 
 var svgContainer = d3.select('div').append('svg')
   .attr('width', 700)
@@ -19,37 +40,99 @@ var svgContainer = d3.select('div').append('svg')
   .style('border', '2px solid black')
   .style('margin-top',"20px");
 
+/*************** Game Data Here! ****************/
+
+var gameStats = {score: 0, bestScore: 0};
+
+/********** Enemies and Player Circles **********/
+
+var jsonCircles = [
+  { "color" : "green", "id" : 'a'},
+  { "color" : "purple", "id" : 'b'},
+  { "color" : "red", "id" : 'c'},
+  { "color" : "teal",  "id": 'd'},
+  { "color" : "gray", "id": 'e'},
+  { "color" : "orange", "id": 'f'},
+  { "color" : "green", "id" : 'g'},
+  { "color" : "purple", "id" : 'h'},
+  { "color" : "red", "id" : 'i'},
+  { "color" : "teal",  "id": 'j'},
+  { "color" : "gray", "id": 'k'},
+  { "color" : "orange", "id": 'l'},
+  { "color" : "green", "id" : 'm'},
+  { "color" : "purple", "id" : 'n'},
+  { "color" : "red", "id" : 'o'},
+  { "color" : "teal",  "id": 'p'},
+  { "color" : "gray", "id": 'q'},
+  { "color" : "orange", "id": 'r'},
+  { "color" : "green", "id" : 's'},
+  { "color" : "purple", "id" : 't'},
+  { "color" : "red", "id" : 'u'},
+  { "color" : "teal",  "id": 'v'},
+  { "color" : "gray", "id": 'w'},
+  { "color" : "orange", "id": 'x'}
+
+];
+
+var enemies = [];
+
+_.each(jsonCircles, function(element) {enemies.push('#'+ element.id);});
+console.log(JSON.stringify(enemies));
+
 var circles = svgContainer.selectAll('circle')
   .data(jsonCircles)
   .enter()
-  .append('circle');
-
+  .append('circle')
+  .attr('id', function(d){ return d.id})
 
 var circleAttributes = circles
-  .attr('cx', function(d) {return 700 * Math.random()})
+  .attr('cx', function(d) {
+    return 700 * Math.random()})
   .attr('cy', d => 600 * Math.random())
-  .attr('r', d => d.radius)
+  .attr('r', d => 10)
   .text(d => d.enemyName)
-  .style('fill', d => d.color);
+  .style('fill', d => d.color)
+
 
 var player = svgContainer.append('circle')
-  .attr('cx', 700 * Math.random())
-  .attr('cy', 600 * Math.random())
-  .attr('r', 20)
-  .style('fill', "black");
+  .attr('class','player')
+  .attr('cx', 350)
+  .attr('cy', 300)
+  .attr('r', 13)
+  .style('fill', "black")
+  .call(drag);
 
 
+/****************** Play Game! ******************/
 
-function update() {
-  circleAttributes.attr("class","update")
-    .transition()
-      .duration(750)
-      .attr('cx', function(d) {return 700 * Math.random()})
-      .attr('cy', d => 600 * Math.random())
-}
-
+updateBestScore();
 
 setInterval(function() { 
-  update();
+  updatePositions();
+}, 1500);
 
-},1000)
+
+setInterval(function(){
+  increaseScore();
+}, 50);
+
+
+setInterval(function() {
+  playerX = parseFloat(player.attr("cx"));
+  playerY = parseFloat(player.attr("cy"));
+
+  _.each(enemies, function(enemy) {
+    var enemyX = Math.floor(d3.select(enemy).attr('cx'));
+    var enemyY = Math.floor(d3.select(enemy).attr('cy'));
+
+    var hasCollisionX = playerX < (enemyX + 15) && playerX > (enemyX - 15);
+    var hasCollisionY = playerY < (enemyY + 15) && playerY > (enemyY - 15);
+    //console.log(enemyX, enemyY, 'Enemies');
+    if (hasCollisionX && hasCollisionY) {
+      updateBestScore();
+      gameStats.score = 0;
+      
+    }
+  });
+}, 0);
+
